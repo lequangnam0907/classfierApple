@@ -1,0 +1,82 @@
+import csv
+
+import cv2
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+from tqdm import  tqdm
+import pandas
+Data="F:/2810/fruit"
+Categories=["xanh-nho","tao-xanh-to","tao-chin-nho","tao-chinh-to"]
+trainning_data=[]
+def create_tranning():
+    for cate in Categories:
+        path=os.path.join(Data,cate)
+        class_num=Categories.index(cate)
+        for img in os.listdir(path):
+               # img_array=cv2.imread(os.path.join(path,img),cv2.IMREAD_GRAYSCALE)
+                img_array= cv2.imread(os.path.join(path,img))  # đọc img
+                gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)  # đổi sang grayscale
+                (thresh, bwimg) = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+                # bwimg là black and white image
+                hang = -1
+                hangmax = -1
+                for ix, x in enumerate(bwimg):
+                    h = 0
+                    for y in x:
+                        if (y == 0):
+                            h += 1
+
+                    if (h > hangmax):
+                        hangmax = h
+                        hang = ix
+                # lấy hàng nhiều pixel đen nhất ( == 0)
+                cot = -1
+                cotmax = -1
+                c1 = 0
+                for j in range(len(bwimg[0])):
+                    c = 0
+                    for i in range(len(bwimg)):
+                        if bwimg[i, j] == 0:
+                            c += 1
+                            c1 += 1
+                    if (c > cotmax):
+                        cotmax = c
+                        cot = j
+                # tương tự với cột
+                # Vien ngoai
+                n_white_pix = np.sum(gray == 255)
+                bl = np.sum(bwimg == 0)
+                # tong pixels qua tao
+                tong = bwimg.size - n_white_pix
+
+                # pixels trang trong qua tao
+                white_pix = cv2.countNonZero(bwimg) - n_white_pix
+
+                # pixels den
+                black_pix = tong - white_pix
+
+                # ti le
+                ratio = black_pix / tong
+                t = bl / (hangmax * cotmax)
+                  if(class_num==0):
+                  trainning_data.append([hangmax,cotmax,t,1,1])
+                if (class_num == 1):
+                  trainning_data.append([hangmax, cotmax, t, 1, 2])
+                if (class_num == 2):
+                   trainning_data.append([hangmax, cotmax, t, 2, 1])
+                if (class_num == 3):
+                    trainning_data.append([hangmax, cotmax, t, 2, 2])
+create_tranning()
+print(trainning_data)
+
+path="F:/pythonProject/abc.csv"
+header=['dai','rong','chin','loai']
+with open(path, "w") as csv_file:
+        csvwriter = csv.writer(csv_file)
+        csvwriter.writerow(header)
+        csvwriter.writerows(trainning_data)
+# Press any key to exit
+cv2.waitKey(0)
+cv2.destroyAllWindows()
